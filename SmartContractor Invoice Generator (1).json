@@ -1,0 +1,345 @@
+{
+  "name": "SmartContractor Invoice Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -448,
+        48
+      ],
+      "id": "4499e1c1-ace9-42aa-a26f-62e61f0e7108",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "customer_requests",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": " 74"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        48
+      ],
+      "id": "f024daf0-046c-4bb2-a9b7-0b9bfdfbbe2b",
+      "name": "Get Job Details",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ImMrbKV9ZNipCVtl",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1a42080-e8fe-4301-8167-1cece6111183",
+              "name": "invoice_number",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "f6f8821a-0c19-4360-a3a5-b06aac584b69",
+              "name": "invoice_date",
+              "value": "={{ $json.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "1491c827-771d-4250-9942-cbfc67b8d512",
+              "name": "customer_name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "3f6a4f6a-50c5-4aa6-9ef4-5d9e72398386",
+              "name": "customer_email",
+              "value": "={{ $json.Customer_Email }}",
+              "type": "string"
+            },
+            {
+              "id": "b768d1be-23fc-4158-b020-2f70cf6e0372",
+              "name": "service_date",
+              "value": "={{ $json.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "08b132c5-6817-43bd-9644-18a7fee55181",
+              "name": "service_category",
+              "value": "={{ $json.contractor_type }}",
+              "type": "string"
+            },
+            {
+              "id": "af8dec5d-c02c-4ef3-b75c-f12eb2ae3aac",
+              "name": "contractor_name",
+              "value": "={{ $json.assigned_contractor }}",
+              "type": "string"
+            },
+            {
+              "id": "4c6fa2f2-d1e1-4f66-92ff-440f39ed4566",
+              "name": "service_description",
+              "value": "={{ $json.contractor_type }}",
+              "type": "string"
+            },
+            {
+              "id": "3b4249a9-eb5f-4c84-aa0b-9808128f1e9a",
+              "name": "amount",
+              "value": "$100",
+              "type": "string"
+            },
+            {
+              "id": "b6d6f0b8-8cad-4c00-8f84-4fd461387992",
+              "name": "PDF_URL",
+              "value": "= ",
+              "type": "string"
+            },
+            {
+              "id": "d3f296bf-c22e-447a-a745-977d5fce8d07",
+              "name": "Customer Adress",
+              "value": "={{ $json.Home_Adress }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        48
+      ],
+      "id": "af2ecd5d-7693-4e14-bd65-502687635348",
+      "name": "Prepare Invoice Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rest.apitemplate.io/v2/create-pdf-from-html",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-KEY",
+              "value": "INSERT YOUR API KEY HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "={{ $json.html }}"
+            },
+            {
+              "name": "format",
+              "value": "A4"
+            },
+            {
+              "name": "css",
+              "value": "= {{ $json.html }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        384,
+        48
+      ],
+      "id": "93665884-9141-4edc-b004-1dd74e99f5d5",
+      "name": "HTML to PDF Conversion"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Invoice Data').item.json.customer_email }}",
+        "subject": "=Your Service Invoice- Invoice#{{ $('Prepare Invoice Data').item.json.invoice_number }}",
+        "emailType": "text",
+        "message": "=Hello{{ $('Prepare Invoice Data').item.json.customer_name }},\n\nThank you for confirming the completion of your service request.\n\nPlease find the attached invoice for the service provided.\n\nIf you have any questions, feel free to reply to this email.\n\nBest regards,\nSmartContractor\nsupport@smartcontractor.com\n",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        48
+      ],
+      "id": "e3fcd20a-3e61-4f11-b32d-81aa8a9340db",
+      "name": "Send Invoice to Customer",
+      "webhookId": "6e423e4a-f067-44e0-a663-596327e95c30",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "q0CO4DWLWULvcVMn",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Invoice Processing",
+        "height": 352,
+        "width": 1824,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -704,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "f3c158c1-3a8b-435e-ba1d-4b5e5461829a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.download_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        592,
+        48
+      ],
+      "id": "9ef241ad-84f2-4355-9475-9c601c517ad8",
+      "name": "Download PDF"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Service Invoice</title>\n\n  <style>\n    @page {\n      size: A4;\n      margin: 20mm;\n    }\n\n    body {\n      font-family: Arial, Helvetica, sans-serif;\n      font-size: 12px;\n      color: #111827;\n      background: #ffffff;\n    }\n\n    .invoice-container {\n      width: 100%;\n    }\n\n    .header {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      margin-bottom: 30px;\n    }\n\n    .company-details h1 {\n      margin: 0;\n      font-size: 22px;\n      color: #2563eb;\n    }\n\n    .company-details p {\n      margin: 2px 0;\n      font-size: 12px;\n    }\n\n    .invoice-details {\n      text-align: right;\n      font-size: 12px;\n    }\n\n    .section {\n      margin-bottom: 25px;\n    }\n\n    .section h2 {\n      font-size: 14px;\n      margin-bottom: 8px;\n      border-bottom: 1px solid #e5e7eb;\n      padding-bottom: 4px;\n    }\n\n    table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 10px;\n    }\n\n    th {\n      background-color: #f1f5f9;\n      text-align: left;\n      padding: 8px;\n      font-size: 12px;\n      border: 1px solid #e5e7eb;\n    }\n\n    td {\n      padding: 8px;\n      border: 1px solid #e5e7eb;\n      vertical-align: top;\n    }\n\n    .amount {\n      text-align: right;\n      white-space: nowrap;\n    }\n\n    .total {\n      margin-top: 20px;\n      display: flex;\n      justify-content: flex-end;\n    }\n\n    .total table {\n      width: 40%;\n    }\n\n    .total th,\n    .total td {\n      padding: 10px;\n      font-size: 13px;\n    }\n\n    .footer {\n      margin-top: 40px;\n      font-size: 11px;\n      color: #6b7280;\n      text-align: center;\n    }\n  </style>\n</head>\n\n<body>\n  <div class=\"invoice-container\">\n\n    <!-- HEADER -->\n    <div class=\"header\">\n      <div class=\"company-details\">\n        <h1>Service Invoice</h1>\n        <p>Smart Contractor</p>\n        <p>support@smartcontractor.com</p>\n      </div>\n\n      <div class=\"invoice-details\">\n        <p><strong>Invoice No:</strong> {{ $json.invoice_number }} </p>\n        <p><strong>Invoice Date:</strong> {{ $json.invoice_date }} </p>\n      </div>\n    </div>\n\n    <!-- BILL TO -->\n    <div class=\"section\">\n      <h2>Bill To</h2>\n      <p><strong>Name:</strong> {{ $json.customer_name }}</p>\n      <p><strong>Email:</strong> {{ $json.customer_email }}</p>\n      <p><strong>Address:</strong> {{ $json['Customer Adress'] }}</p>\n    </div>\n\n    <!-- SERVICE DETAILS TABLE -->\n    <div class=\"section\">\n      <h2>Service Details</h2>\n\n      <table>\n        <thead>\n          <tr>\n            <th>Service Date</th>\n            <th>Service Category</th>\n            <th>Contractor</th>\n            <th>Description</th>\n            <th class=\"amount\">Amount</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td>{{ $json.service_date }}</td>\n            <td>{{ $json.service_category }}</td>\n            <td>{{ $json.contractor_name }}</td>\n            <td>{{ $json.service_description }}</td>\n            <td class=\"amount\">{{ $json.amount }}</td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n\n    <!-- TOTAL -->\n    <div class=\"total\">\n      <table>\n        <tr>\n          <th>Total Amount</th>\n          <td class=\"amount\">{{ $json.amount }}</td>\n        </tr>\n      </table>\n    </div>\n\n    <!-- FOOTER -->\n    <div class=\"footer\">\n      <p>Thank you for using our service.</p>\n      <p>This is a system-generated invoice and does not require a signature.</p>\n    </div>\n\n  </div>\n</body>\n</html>\n"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        48
+      ],
+      "id": "4218051c-a804-49c6-a9e4-a10f7e4eb77d",
+      "name": "Invoice Layout1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Job Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Job Details": {
+      "main": [
+        [
+          {
+            "node": "Prepare Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Invoice Layout1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML to PDF Conversion": {
+      "main": [
+        [
+          {
+            "node": "Download PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Invoice to Customer": {
+      "main": [
+        []
+      ]
+    },
+    "Download PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Layout1": {
+      "main": [
+        [
+          {
+            "node": "HTML to PDF Conversion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5ae5aeef-cfae-460d-8344-ea6dcf5764d8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c00e56eea381fd7ecd61f76c4292f5be5d507cdd25afea0257694b364bb88ba"
+  },
+  "id": "KuxNY8tjfPGIHPjj",
+  "tags": []
+}
