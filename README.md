@@ -262,5 +262,7 @@ The following credentials are securely stored inside **n8n**:
 
 ---
 
+Demo Video Link: https://www.facebook.com/share/v/1MRMxgGQUv/
+
 🚀 **SmartContractor** transforms traditional home service operations into a **fully automated, AI-driven, and scalable platform** — reducing costs, improving trust, and enhancing customer experience.
 
